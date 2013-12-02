@@ -1,4 +1,4 @@
 qiwit
 =====
 
-soap qiwi
+Visa QIWI Wallet
