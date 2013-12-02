@@ -32,20 +32,39 @@ class Qiwit {
 	//api url
 	private $api_url = 'https://w.qiwi.com/api/v2/';
 
+	//api key
+	private $api_key;
+
+	//provider id
+	private $prv_id;
+
 	//token
 	private $auth_token;
 
 	//constructor
-	public function __construct() {
-		$this->auth_token = $this->get_token();
+	public function __construct($api_key = null, $prv_id = null) {
+		if (!$api_key)
+			throw new Exception("API key is required");
+		if (!$prv_id)
+			throw new Exception("Provider id is required");
+		$this->api_key = $api_key;
+		$this->prv_id = $prv_id;
+		$this->auth_token = base64_encode($this->prv_id.':'.$this->api_key);
+	}
+
+	//get authorization token
+	private function get_token() {
+
 	}
 
 	//authorization get request
 	private function get_request($query, $params = array()) {
 		$header = array(
 			'GET '.$this->url.'/'.$query.' HTTP/1.1',
-			'Host: googleapis.com',
+			'Host: w.qiwi.com',
+			'Accept: text/json',
 			'Authorization: Basic '.$this->auth_token,
+			'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
 		);
 
 		if (!empty($params))
@@ -75,8 +94,10 @@ class Qiwit {
 	private function post_request($query, $params = array()) {
 		$header = array(
 				'POST '.$this->url.'/'.$query.' HTTP/1.1',
-				'Host: googleapis.com',
+				'Host: w.qiwi.com',
+				'Accept: text/json',
 				'Authorization: Basic '.$this->auth_token,
+				'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
 			);
 
 		if (!empty($params))
@@ -105,8 +126,10 @@ class Qiwit {
 	private function custom_request($request_type, $query, $params = array()) {
 		$header = array(
 				$request_type.' '.$this->url.'/'.$query.' HTTP/1.1',
-				'Host: googleapis.com',
+				'Host: w.qiwi.com',
+				'Accept: text/json',
 				'Authorization: Basic '.$this->auth_token,
+				'Content-Type: application/x-www-form-urlencoded; charset=utf-8',
 			);
 
 		if (!empty($params)) {
