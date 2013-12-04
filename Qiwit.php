@@ -157,4 +157,14 @@ class Qiwit {
 		$result = json_decode($response);
 		return $result;
 	}
+
+	/*
+	create_bill
+
+	*/
+	public function create_bill($bill_id = null, $params = array()) {
+		if (!preg_match('/^tel:\+\d{1,15}$/', $params['user']))
+			throw new Exception("Неверный формат данных");
+		return $this->custom_request('prv/'.$this->prv_id.'/bills/'.$bill_id, $params);
+	}
 }
