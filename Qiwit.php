@@ -52,15 +52,10 @@ class Qiwit {
 		$this->auth_token = base64_encode($this->prv_id.':'.$this->api_key);
 	}
 
-	//get authorization token
-	private function get_token() {
-
-	}
-
 	//authorization get request
 	private function get_request($query, $params = array()) {
 		$header = array(
-			'GET '.$this->url.'/'.$query.' HTTP/1.1',
+			'GET '.$this->api_url.'/'.$query.' HTTP/1.1',
 			'Host: w.qiwi.com',
 			'Accept: text/json',
 			'Authorization: Basic '.$this->auth_token,
@@ -74,7 +69,7 @@ class Qiwit {
 
 		$ch = curl_init();
 		$options = array(
-			CURLOPT_URL => $this->url.'/'.$query . $params,
+			CURLOPT_URL => $this->api_url.'/'.$query . $params,
 			CURLOPT_HTTPHEADER => $header,
 			CURLOPT_RETURNTRANSFER => true,
 			CURLOPT_SSL_VERIFYPEER => 0,
@@ -93,7 +88,7 @@ class Qiwit {
 	//authorization post request
 	private function post_request($query, $params = array()) {
 		$header = array(
-				'POST '.$this->url.'/'.$query.' HTTP/1.1',
+				'POST '.$this->api_url.'/'.$query.' HTTP/1.1',
 				'Host: w.qiwi.com',
 				'Accept: text/json',
 				'Authorization: Basic '.$this->auth_token,
@@ -105,7 +100,7 @@ class Qiwit {
 
 		$ch = curl_init();
 		$options = array(
-			CURLOPT_URL => $this->url.'/'.$query,
+			CURLOPT_URL => $this->api_url.'/'.$query,
 			CURLOPT_HTTPHEADER => $header,
 			CURLOPT_POSTFIELDS => $fields,
 			CURLOPT_RETURNTRANSFER => true,
@@ -125,7 +120,7 @@ class Qiwit {
 	//authorization custom request
 	private function custom_request($request_type, $query, $params = array()) {
 		$header = array(
-				$request_type.' '.$this->url.'/'.$query.' HTTP/1.1',
+				$request_type.' '.$this->api_url.'/'.$query.' HTTP/1.1',
 				'Host: w.qiwi.com',
 				'Accept: text/json',
 				'Authorization: Basic '.$this->auth_token,
@@ -142,7 +137,7 @@ class Qiwit {
 
 		$ch = curl_init();
 		$options = array(
-			CURLOPT_URL => $this->url.'/'.$query . $params,
+			CURLOPT_URL => $this->api_url.'/'.$query . $params,
 			CURLOPT_HTTPHEADER => $header,
 			CURLOPT_POSTFIELDS => $params,
 			CURLOPT_RETURNTRANSFER => true,
@@ -159,9 +154,11 @@ class Qiwit {
 	}
 
 	/*
-	create_bill - Выставление счета пользователю
+	bill_create - Выставление счета пользователю
 	*/
-	public function create_bill($bill_id = null, $params = array()) {
+	public function bill_create($bill_id = null, $params = array()) {
+		if (!$bill_id)
+			throw new Exception("Не задан ID счета");
 		if (!preg_match('/^tel:\+\d{1,15}$/', $params['user']))
 			throw new Exception("Неверный формат кошелька пользователя");
 		if (!preg_match('/^\d+(.\d{0,3})?$/', $params['amount']))
@@ -176,4 +173,34 @@ class Qiwit {
 			throw new Exception("Длина названия провайдера должна быть не более 100 символов");
 		return $this->custom_request('prv/'.$this->prv_id.'/bills/'.$bill_id, $params);
 	}
+
+	/*
+	bill_status - Запрос статуса счета
+	*/
+	public function bill_status($bill_id = null, $params = array()) {
+		if (!$bill_id)
+			throw new Exception("Не задан ID счета");
+		return $this->get_request('prv/'.$this->prv_id.'/bills/'.$bill_id, $params);
+	}
+
+	/*
+	bill_redirect - Переадресация для оплаты счета
+	*/
+	public function bill_redirect($bill_id = null, $success_url = null, $fail_url = null, $iframe = true) {
+		if ((!$success_url) || (!$fail_url))
+			throw new Exception("Параметры не заданы!");
+		if (!$bill_id)
+			throw new Exception("Не задан ID счета");
+		$first = array('shop' => $this->prv_id, 'transaction' => $bill_id);
+		$second = array('successUrl' => $success_url, 'failUrl' => $fail_url);
+		$params = array_merge($first, $second);
+		$url = 'https://w.qiwi.com/order/external/main.action';
+
+		if ($iframe == true)
+			$params.= '&iframe=true';
+
+		$location = $url.'?'.http_build_query($params);
+		header("Location: ".$location);
+	}
+
 }
