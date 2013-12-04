@@ -171,7 +171,7 @@ class Qiwit {
 			throw new Exception("Неверный формат даты");
 		if (!preg_match('/^\.{1,100}$/', $params['prv_name']))
 			throw new Exception("Длина названия провайдера должна быть не более 100 символов");
-		return $this->custom_request('prv/'.$this->prv_id.'/bills/'.$bill_id, $params);
+		return $this->custom_request('PUT', 'prv/'.$this->prv_id.'/bills/'.$bill_id, $params);
 	}
 
 	/*
@@ -201,6 +201,45 @@ class Qiwit {
 
 		$location = $url.'?'.http_build_query($params);
 		header("Location: ".$location);
+	}
+
+	/*
+	bill_rollback - Отмена неоплаченного выставленного счета
+	*/
+	public function bill_rollback($bill_id = null, $status = null) {
+		if (!$bill_id)
+			throw new Exception("Не задан ID счета");
+		if (!preg_match('/^rejected$/', $status))
+			throw new Exception("Неверный формат статуса");
+		$params = array('status' => $status);
+		return $this->custom_request('PATCH', 'prv/'.$this->prv_id.'/bills/'.$bill_id, $params);
+	}
+
+	/*
+	bill_refund - Возврат средств по оплаченному счету
+	*/
+	public function bill_refund($bill_id = null, $refund_id = null, $amount = null) {
+		if (!$bill_id)
+			throw new Exception("Не задан ID счета");
+		if (!$refund_id)
+			throw new Exception("Не задан ID отмены счета");
+		if (!$amount)
+			throw new Exception("Не задана сумма возврата");
+		if(!preg_match('^\d+(\.\d{0,3})?$', $amount))
+			throw new Exception("Неверный формат суммы возврата");
+		$params = array('amount' => $amount);
+		return $this->custom_request('PUT', 'prv/'.$this->prv_id.'/bills/'.$bill_id.'/refund/'.$refund_id, $params);
+	}
+
+	/*
+	bill_check_status - Проверка статуса возврата
+	*/
+	public function bill_check_status($bill_id = null, $refund_id = null) {
+		if (!$bill_id)
+			throw new Exception("Не задан ID счета");
+		if (!$refund_id)
+			throw new Exception("Не задан ID отмены счета");
+		return $this->get_request('prv/'.$this->prv_id.'/bills/'.$bill_id.'/refund/'.$refund_id, array());
 	}
 
 }
