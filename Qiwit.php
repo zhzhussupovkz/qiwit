@@ -159,12 +159,21 @@ class Qiwit {
 	}
 
 	/*
-	create_bill
-
+	create_bill - Выставление счета пользователю
 	*/
 	public function create_bill($bill_id = null, $params = array()) {
 		if (!preg_match('/^tel:\+\d{1,15}$/', $params['user']))
-			throw new Exception("Неверный формат данных");
+			throw new Exception("Неверный формат кошелька пользователя");
+		if (!preg_match('/^\d+(.\d{0,3})?$/', $params['amount']))
+			throw new Exception("Неверный формат счета");
+		if (!preg_match('/^[a-zA-Z]{3}$/', $params['ccy']))
+			throw new Exception("Неверный формат идентификатора валюты");
+		if (!preg_match('/^\.{0,255}$/', $params['comment']))
+			throw new Exception("Комментарий должен быть текстом");
+		if (!preg_match('^\d{4}-\d{2}0\d{4}T\d{2}:\d{2}:\d{2}$', $params['lifetime']))
+			throw new Exception("Неверный формат даты");
+		if (!preg_match('/^\.{1,100}$/', $params['prv_name']))
+			throw new Exception("Длина названия провайдера должна быть не более 100 символов");
 		return $this->custom_request('prv/'.$this->prv_id.'/bills/'.$bill_id, $params);
 	}
 }
